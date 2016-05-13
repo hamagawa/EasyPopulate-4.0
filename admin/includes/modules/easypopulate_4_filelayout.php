@@ -8,6 +8,21 @@ if (!defined('IS_ADMIN_FLAG')) {
   die('Illegal Access');
 }
 
+  if (!isset($chosen_key)){
+    switch (EP4_DB_FILTER_KEY) {
+      case 'products_model':
+        $chosen_key = 'v_products_model';
+        break;
+      case 'blank_new':
+      case 'products_id':
+        $chosen_key = 'v_products_id';
+        break;
+      default:
+        $chosen_key = 'v_products_model';
+        $zco_notifier->notify('EP4_MODULES_FILELAYOUT_CHOSEN_KEY', array(), $chosen_key);
+        break;
+    }
+  }
 	$filelayout = array();
 	switch($ep_dltype) {
 	case 'SBAStock';
@@ -56,6 +71,11 @@ if (!defined('IS_ADMIN_FLAG')) {
 
 		// The file layout is dynamically made depending on the number of languages
 		$filelayout[] = 'v_products_model';
+		
+		if ($chosen_key != 'v_products_model' && zen_not_null($chosen_key)) {
+		  $filelayout[] = $chosen_key;
+		}
+		
 		$filelayout[] = 'v_products_type'; // 4-23-2012
 		$filelayout[] = 'v_products_image';
 		foreach ($langcode as $key => $lang) { // create variables for each language id
@@ -100,7 +120,9 @@ if (!defined('IS_ADMIN_FLAG')) {
 		}
 		if (count($custom_fields) > 0) { // User Defined Products Fields
 			foreach ($custom_fields as $field) {
-				$filelayout[] = 'v_'.$field;
+			  if ($chosen_key != 'v_' . $field) {
+				  $filelayout[] = 'v_'.$field;
+			  }
 			}
 		}
 		$filelayout[] = 'v_products_weight';
@@ -190,7 +212,9 @@ if (!defined('IS_ADMIN_FLAG')) {
 
 		if (count($custom_fields) > 0) { // User Defined Products Fields
 			foreach ($custom_fields as $field) {
-				$filelayout_sql .= 'p.'.$field.' as v_'.$field.',';
+			  if ($chosen_key != 'v_' . $field) {
+				  $filelayout_sql .= 'p.'.$field.' as v_'.$field.',';
+			  }
 			}
 		}
 		$filelayout_sql .= ' p.products_weight as v_products_weight,
@@ -230,8 +254,8 @@ if (!defined('IS_ADMIN_FLAG')) {
 	case 'featured': // added 5-2-2012
 		$filelayout[] = 'v_products_model';
 		$zco_notifier->notify('EP4_EXTRA_FUNCTIONS_SET_FILELAYOUT_FEATURED_FILELAYOUT');
-    if (EP4_DB_FILTER_KEY === 'products_id' || EP4_DB_FILTER_KEY === 'blank_new') {
-      $filelayout[] = 'v_products_id';
+    if ($chosen_key !== 'v_products_model') {
+      $filelayout[] = $chosen_key;
     }
     $filelayout[] = 'v_status';
 		$filelayout[] = 'v_featured_date_added';
